@@ -64,7 +64,4 @@ void select_move(){
 
 }
 
-void check_HP_MOVES(){
-
-}
 
