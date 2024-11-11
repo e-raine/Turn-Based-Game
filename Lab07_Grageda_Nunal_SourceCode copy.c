@@ -120,7 +120,7 @@ void menu()
 		scanf("%d", &input);
 
 		if(verifyInputSelection(input,1,2))
-		  printf("Option does not Exist\n Try Again!\n");
+		  printf("\nOption does not Exist\nTry Again!\n\n");
         else
 		  break;
 	}
