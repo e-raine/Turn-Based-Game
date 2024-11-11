@@ -22,7 +22,7 @@ int user=0;
 #define MAXENERGY 10
 #define MAXDAMAGE 5+1
 #define DEFENSE 3
-#define MAXDEFENSE 5
+#define MAXDEFENSE
 #define HEAL 2
 #define MINSPECIALDAMAGE 5
 #define MAXSPECIALDAMAGE 30
@@ -55,8 +55,8 @@ void botSelect(int size,char *CharactersName[3]);
 //Game
 int attack(int damage, char *name);
 int updatedefense();
-int defense();
-int heal();
+void defense();
+void heal();
 int checkEnergy();
 void ApplySpecialAttack();
 
@@ -95,7 +95,6 @@ void menu(){
 		case 1:
 					printf("\nCreating New Game\n\n");
 					gameSetup();
-          cleanScreen();
 					coinflip();
 					game();
 					break;
@@ -119,7 +118,7 @@ int verifyInputSelection(int input,int min,int max){
 void gameSetup(){
   cleanScreen();
   int gameSetupFlag=1;
-  
+
   do{
     chooseTheme();
     chooseMaxHP();
@@ -129,59 +128,57 @@ void gameSetup(){
     do{
       char c_input;
 
-      printf("Game SETUP:\nTheme: %s\nCharacter:%s\nOpponent:%s\nMaximum Health Points: %d\nTotal of Rounds:%d\n\nConfirm Game Setup[Y/N]",themeSelect,PlayerName,BotName,stat[0][1],TotalRounds);
-      getchar() != '\n';         //To make sure that it won't skip to line 138;
-      scanf("%c",&c_input);
+      printf("Game SETUP:\nTheme: %s\nMaximum Health Points: %d\nTotal of Rounds:%d\n\nConfirm Game Setup[Y/N]",themeSelect,stat[0][1],TotalRounds);
+      scanf("%c",c_input);
 
-      if(c_input!='y'&&c_input != 'Y'&&c_input != 'n'&&c_input != 'N'){
-        cleanScreen();
-        printf("Please Input a Valid Character!\n\n\n");
-      }else{
-
-        if(c_input=='Y'||c_input == 'y'){
-
-          gameSetupFlag=0;
-          break;
-
-        }else if(c_input=='N'||c_input=='n'){
+      if(c_input=='Y'||c_input == 'y'){
+        gameSetupFlag=0;
+        break;
+      }else if(c_input=='N'||c_input=='n'){
         
-          do{
+        do{
+          cleanScreen();
+          printf("Which do you want to change?\n[1]Theme\\Character\n[2]Maximum Health Points\n[3]Total of Rounds\n\nChoice:");
+          
+          scanf("%d",input);
+
+          if(verifyInputSelection(input,1,3)){
             cleanScreen();
-            printf("Which do you want to change?\n[1]Theme\\Character\n[2]Maximum Health Points\n[3]Total of Rounds\n\nChoice:");
-            
-            scanf("%d",&input);
-
-            if(verifyInputSelection(input,1,3)){
-              cleanScreen();
-              printf("\nInput out of bounds try Again\n");
-            }else{
-              break;
-            }
-          }while(1);
-        
-          switch(input){
-
-            case 1:
-              chooseTheme();
-              break;
-            case 2:
-              chooseMaxHP();
-              break;
-            case 3:
-              chooseRounds();
-              break;
+            printf("\nInput out of bounds.!\n try Again\n");
+          }else{
+            break;
           }
+        }while(1);
+        
+        switch(input){
+
+          case 1:
+            chooseTheme();
+            break;
+          case 2:
+            chooseMaxHP();
+            break;
+          case 3:
+            chooseRounds();
+            break;
         }
       }
 
-
+      if(c_input!='y'||c_input != 'Y'||c_input != 'n'||c_input != 'N'){
+        cleanScreen();
+        printf("Please Input a Valid Character!\n");
+      }else{
+        break;
+      }
     }while(1);
+    
+
   }while(gameSetupFlag);
   
 }
 
 void coinflip(){
-  printf("COINFLIP\nFirst Move will be decided by a coin flip.\n");
+  printf("\nFirst Move will be decided by a coin flip.\n");
   
   do{
     printf("Choose a coin side\n[1]Heads\n[2]Tails\nSide:");
@@ -215,7 +212,6 @@ void game(){
       printf("Bot Move\n");
       pickAction();
     }
-    cleanScreen();
     round++;
   }while(round<=TotalRounds);
 }
@@ -385,15 +381,11 @@ void botSelect(int size, char *CharactersName[]){
   printf("\n\nBot Character Selection\n");
   
   do{
-    int i=rand()%size-1;
-    delay(200);
-    BotName=CharactersName[i];
-    
+    BotName=CharactersName[rand()%size-1];
     if(PlayerName!=BotName){
       break;
     }
   }while(1);
-  
   printf("\nThe opponent have selected %s.",BotName);
 }
 
@@ -419,6 +411,7 @@ void pickAction(){
     if(verifyInputSelection(input,1,4)){
       printf("\nSuch action does not exist.\n Please select again.\n");
     }else{
+      printf("\nPerforming");
 
       switch (input){
         case 1:{
@@ -429,24 +422,22 @@ void pickAction(){
           break;
         }
           
-        case 2:{
+        case 2:
+          
+          flag=1;
 
-          flag=defense();
           break;
-        }
-          
-        case 3:{
-          flag=heal();
+        case 3:
+          stat[0][1] += HEAL;
+          flag=1;
           break;
-        }
-          
         case 4:{
           if(checkEnergy){
-            
-          int damage;
-              printf("You(%s) dealt %dhp damage to %s.",SpecialAttack,damage, BotName);
-            }else{
-              flag=0;
+           
+  			int damage;
+            printf("You(%s) dealt %dhp damage to %s.",SpecialAttack,damage, BotName);
+          }else{
+            flag=0;
           }
          
           break;
@@ -549,54 +540,10 @@ int updatedefense(int receiver, int damage){
    }
 }
 
-int defense(){
-  if(stat[user][2]<MAXDEFENSE){
-
-    stat[user][2]+=3;
-
-    if(!user){
-      if (stat[user][2]>=MAXDEFENSE){
-        printf("You have maxed out your ability to Defend.\n");
-        stat[user][2]=MAXDEFENSE;
-        return 1;
-      }else{
-        printf("You can now Defend up to %dhp attacks.\n",stat[user][2]);
-        return 1;
-      }
-    }
-    if(user){
-      stat[user][2]=5;
-      return 1;
-    }
-
-  }else{
-    if(!user){
-      printf("You have already maxed out your ability to defend.\nChoose another move.");
-    }
-      return 0;
-  }
-
+void defense(){
+  stat[0][2] += DEFENSE;
 }
 
-int heal(){
-  if(stat[user][1]<MAXHP){
-            stat[user][1]+= HEAL;
-
-            if(stat[user][1]>=MAXHP){
-              if(!user)
-                printf("You healed back to Full HP.\n");
-              stat[user][1]+= MAXHP;
-            }else{
-                printf("You gained %d from healing and now you have %dHP", HEAL,stat[user][1]);
-            }
-            return 1;
-          }else{
-            if(!user){
-              printf("You are already fully healed. You Cannot Heal at the moment Choose another move.\n");
-            }
-            return 0;
-          }
-}
 int checkEnergy(){
   if(stat[0][3]<MINENERGY){
     if(!user)printf("\nYou don't have enough Energy. \n Choose another action\n");
@@ -608,4 +555,3 @@ int checkEnergy(){
 void cleanScreen(){
   printf("\033[H\033[J");
 }
-
