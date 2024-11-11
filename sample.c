@@ -11,6 +11,7 @@ char *SpecialAttack;
 int themeSelect;
 unsigned int TotalRounds;
 int playermovedeterminer;
+int userflag=0;
 
 //Defined Constants
 #define MINHP 50
@@ -26,14 +27,14 @@ int playermovedeterminer;
 #define MAXSPECIALDAMAGE 30
 
 //Stats
-int playerstat[4]={1,MAXHP,0,0};
-int botstat[4]={1,MAXHP,0,0};
+int stat[2][4] ={1,MAXHP,0,0},{1,MAXHP,0,0}
 
 //Prototypes
 void menu();
 int verifyInputSelection(int input,int min,int max);
 void displaystat();
 void pickAction();
+void botAction();
 void gameSetup();
 void coinflip();
 void game();
@@ -64,6 +65,7 @@ void main(){
 
 	printf("Welcome to Ultimate Showdown\n\n");
 	menu();
+  
 }
 
 //Functions
@@ -137,6 +139,7 @@ void game(){
   int round = 1;
   do{
     printf("Round %d\n", round);
+    displaystat();
     if(playermovedeterminer){
       pickAction();
       printf("Bot Move\n\n");
@@ -181,14 +184,14 @@ void chooseMaxHP(){
 
     if(verifyInputSelection(input,MINHP,MAXHP)){
       if(input<MINHP){
-        printf("\nHP is too small,input a larger amount of health points");
+        printf("\nHP is too small, input a larger amount of health points");
       }
       if(input>MAXHP){
-        printf("\nHP is too Big,input a smaller amount of health points");
+        printf("\nHP is too Big, input a smaller amount of health points");
       }
     }else{
-      playerstat[1]=input;
-      botstat[1]=input;
+      stat[0][1]=input;
+      stat[1][1]=input;
       break;
     }
   }while(1);
@@ -317,26 +320,24 @@ void playermove(){
 }
 
 void displaystat(){
-  printf("\n\n%s\nHP:%d\t\tArmor:%d\t\tSpecial Energy:%d/5", PlayerName,playerstat[1],playerstat[2],playerstat[3]);
-  printf("\n%s\nHP:%d\t\tArmor:%d", BotName,botstat[1],botstat[2]);
+  printf("\n%s(you)\nHP:%d\t\tArmor:%d\t\tSpecial Energy:%d/5", PlayerName,stat[0][1],stat[0][2],playerstat[0][3]);
+  printf("\n\n%s(bot)\nHP:%d\t\tArmor:%d", BotName,botstat[1],botstat[2]);
 }
 
 void pickAction(){
+  userflag=1;
   do{
     int flag=0;
-    printf("\nChoose and Action\n[1]Attack\t[2]Defend\t[3]Heal\t\t[4]Special Attack\nChoice:");
+    printf("\n\nChoose and Action\n[1]Attack\t[2]Defend\t[3]Heal\t\t[4]Special Attack\nChoice:");
     scanf("%d",&input);
 
     if(verifyInputSelection(input,1,4)){
       printf("\nSuch action does not exist.\n Please select again.\n");
-    }else if(input==4){
-      checkEnergy();
     }else{
       printf("\nPerforming");
 
       switch (input){
         case 1:{
-          
           int damage= attack(botstat[2],BotName);
           botstat[1]-= damage;
           botstat[2]-= updatedefense(botstat[2],damage);
@@ -354,9 +355,14 @@ void pickAction(){
           flag=1;
           break;
         case 4:{
-          int damage=((rand()%MAXSPECIALDAMAGE+MINSPECIALDAMAGE)-botstat[2]);
-          botstat[1]-=damage;
-          printf("You(%s) dealt %dhp damage to %s.",SpecialAttack,damage, BotName);
+          if(checkEnergy){
+            int damage=((rand()%MAXSPECIALDAMAGE+MINSPECIALDAMAGE)-botstat[2]);
+            botstat[1]-=damage;
+            printf("You(%s) dealt %dhp damage to %s.",SpecialAttack,damage, BotName);
+          }else{
+            flag=0;
+          }
+         
           break;
         }
        
@@ -368,18 +374,68 @@ void pickAction(){
   }while(1);
 }
 
+void botAction(){
+  userflag=0;
+  printf("Bot's Turn");
+
+  do{
+    int flag = 0;
+    int bot=(rand()%4)+1;
+
+    switch (bot){
+        case 1:{
+          int damage= attack(playerstat[2],BotName);
+          playerstat[1]-= damage;
+          playerstat[2]-= updatedefense(playerstat[2],damage);
+          flag=1;
+          break;
+        }
+          
+        case 2:
+          
+          flag=1;
+
+          break;
+        case 3:
+          playerstat[1] += HEAL;
+          flag=1;
+          break;
+        case 4:{
+          if(checkEnergy){
+            int damage=((rand()%MAXSPECIALDAMAGE+MINSPECIALDAMAGE)-botstat[2]);
+            botstat[1]-=damage;
+            printf("You(%s) dealt %dhp damage to %s.",SpecialAttack,damage, BotName);
+          }else{
+            flag=0;
+          }
+         
+          break;
+        }
+    }
+      if(flag)
+        break;
+  }while(1);
+  
+  
+}
 int attack(int defense, char *name){
 
     int init_damage = ((rand()%MAXDAMAGE)-defense);
     int damage =init_damage-defense;
-    if(damage<defense){
-      printf("Your attack got blocked by %s",name);
-      return 0;
-    }
 
-      
-    printf("\nYou(%s) dealt %dhp damage to %s.\n\n",PlayerName,damage, name);
+    if(damage<defense){
+      if(userflag){
+        printf("Your attack got blocked by %s",name);
+      }else{
+        printf("You blocked %s attack",name);
+      }
+      defense-=damage;
+      return 0;
+    }else{
+      printf("\nYou dealt %dhp damage to %s.\n\n",damage, name);
     return damage;
+    }
+ 
 }
 
 int updatedefense(int receiver, int damage){
