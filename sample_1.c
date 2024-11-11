@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <ctype.h>
 
 //Global Variables
 int input;
@@ -9,23 +10,25 @@ char *PlayerName;
 char *BotName;
 char *SpecialAttack;
 char *themeSelect;
-unsigned int TotalRounds;
+int TotalHP;
+int TotalRounds;
 int playermovedeterminer;
 int user=0;
+int player = 0, bot = 1;
+int move = 0, hp = 1, dp = 2, energy =3;
 
 //Defined Constants
 #define MINHP 50
 #define MAXHP 200
 #define MINROUND 5
 #define MAXROUND 50
-#define MINENERGY 4
+#define MINENERGY 3
 #define MAXENERGY 10
-#define MAXDAMAGE 5+1
+#define MAXDAMAGE 5
 #define DEFENSE 3
-#define MAXDEFENSE
+#define MAXDEFENSE 5
 #define HEAL 2
-#define MINSPECIALDAMAGE 5
-#define MAXSPECIALDAMAGE 30
+#define DAMAGE init_damage-defense
 
 //Stats
 int stat[2][4] ={{1,MAXHP,0,0},{1,MAXHP,0,0}};
@@ -53,12 +56,12 @@ void f1();
 void botSelect(int size,char *CharactersName[3]);
 
 //Game
-int attack(int damage, char *name);
-int updatedefense();
-void defense();
-void heal();
+int attack(int defense, char *name);
+int updatedefense(int receiver, int damage);
+int defense();
+int heal();
 int checkEnergy();
-void ApplySpecialAttack();
+int ApplySpecialAttack();
 
 //Common Function
 void delay(int milliseconds) {
@@ -95,6 +98,7 @@ void menu(){
 		case 1:
 					printf("\nCreating New Game\n\n");
 					gameSetup();
+          cleanScreen();
 					coinflip();
 					game();
 					break;
@@ -118,7 +122,7 @@ int verifyInputSelection(int input,int min,int max){
 void gameSetup(){
   cleanScreen();
   int gameSetupFlag=1;
-
+  
   do{
     chooseTheme();
     chooseMaxHP();
@@ -128,57 +132,59 @@ void gameSetup(){
     do{
       char c_input;
 
-      printf("Game SETUP:\nTheme: %s\nMaximum Health Points: %d\nTotal of Rounds:%d\n\nConfirm Game Setup[Y/N]",themeSelect,stat[0][1],TotalRounds);
-      scanf("%c",c_input);
+      printf("Game SETUP:\nTheme: %s\nCharacter:%s\nOpponent:%s\nMaximum Health Points: %d\nTotal of Rounds:%d\n\nConfirm Game Setup[Y/N]",themeSelect,PlayerName,BotName,stat[0][1],TotalRounds);
+      getchar() != '\n';         //To make sure that it won't skip to line 138;
+      scanf("%c",&c_input);
 
-      if(c_input=='Y'||c_input == 'y'){
-        gameSetupFlag=0;
-        break;
-      }else if(c_input=='N'||c_input=='n'){
+      if(toupper(c_input) != 'Y'&& toupper(c_input) != 'N'){
+        cleanScreen();
+        printf("Please Input a Valid Character!\n\n\n");
+      }else{
+
+        if(toupper(c_input)=='Y'){
+
+          gameSetupFlag=0;
+          break;
+
+        }else if(toupper(c_input)=='N'){
         
-        do{
-          cleanScreen();
-          printf("Which do you want to change?\n[1]Theme\\Character\n[2]Maximum Health Points\n[3]Total of Rounds\n\nChoice:");
-          
-          scanf("%d",input);
-
-          if(verifyInputSelection(input,1,3)){
+          do{
             cleanScreen();
-            printf("\nInput out of bounds.!\n try Again\n");
-          }else{
-            break;
-          }
-        }while(1);
-        
-        switch(input){
+            printf("Which do you want to change?\n[1]Theme\\Character\n[2]Maximum Health Points\n[3]Total of Rounds\n\nChoice:");
+            
+            scanf("%d",&input);
 
-          case 1:
-            chooseTheme();
-            break;
-          case 2:
-            chooseMaxHP();
-            break;
-          case 3:
-            chooseRounds();
-            break;
+            if(verifyInputSelection(input,1,3)){
+              cleanScreen();
+              printf("\nInput out of bounds try Again\n");
+            }else{
+              break;
+            }
+          }while(1);
+        
+          switch(input){
+
+            case 1:
+              chooseTheme();
+              break;
+            case 2:
+              chooseMaxHP();
+              break;
+            case 3:
+              chooseRounds();
+              break;
+          }
         }
       }
 
-      if(c_input!='y'||c_input != 'Y'||c_input != 'n'||c_input != 'N'){
-        cleanScreen();
-        printf("Please Input a Valid Character!\n");
-      }else{
-        break;
-      }
-    }while(1);
-    
 
+    }while(1);
   }while(gameSetupFlag);
   
 }
 
 void coinflip(){
-  printf("\nFirst Move will be decided by a coin flip.\n");
+  printf("COINFLIP\nFirst Move will be decided by a coin flip.\n");
   
   do{
     printf("Choose a coin side\n[1]Heads\n[2]Tails\nSide:");
@@ -187,6 +193,7 @@ void coinflip(){
       printf("\nPlease Select Head or Tails only.\n");
 		}else{
 		  int coin = (rand()%2)+1;
+
 		  if(coin==input){
 		    playermovedeterminer=1;
 		    printf("You get to move first.\n\n");
@@ -194,8 +201,16 @@ void coinflip(){
 		    playermovedeterminer=0;
 		    printf("\nOpponent get to move first.\n\n");
 		  }
-		  break;
+      int i;
+      printf("Loading");
+        for(;i<3;i++){
+          delay(800);
+          printf(".");
+        }
+      printf("\n");
+      break;
     }
+    
   }while(1);
 }
 
@@ -203,15 +218,15 @@ void game(){
   cleanScreen();
   int round = 1;
   do{
-    printf("Round %d\n", round);
     displaystat();
     if(playermovedeterminer){
-      pickAction();
+      pickAction(round);
       printf("Bot Move\n\n");
     }else{
       printf("Bot Move\n");
       pickAction();
     }
+    cleanScreen();
     round++;
   }while(round<=TotalRounds);
 }
@@ -266,6 +281,7 @@ void chooseMaxHP(){
     }else{
       stat[0][1]=input;
       stat[1][1]=input;
+      TotalHP=input;
       break;
     }
   }while(1);
@@ -378,69 +394,66 @@ void f1(){
 }
 
 void botSelect(int size, char *CharactersName[]){
-  printf("\n\nBot Character Selection\n");
+  
   
   do{
-    BotName=CharactersName[rand()%size-1];
+    int i=rand()%size-1;
+    delay(1000);
+    printf("\n\nBot Selecting a Character \n");
+    BotName=CharactersName[i];
+    
     if(PlayerName!=BotName){
       break;
     }
   }while(1);
+  
   printf("\nThe opponent have selected %s.",BotName);
 }
 
-//Move
-void playermove(){
-  displaystat();
-
-  pickAction();
-}
-
 void displaystat(){
-  printf("\n%s(you)\nHP:%d\t\tDefense Points:%d\t\tSpecial Energy:%d/5", PlayerName,stat[0][1],stat[0][2],stat[0][3]);
+  printf("%s(you)\nHP:%d\t\tDefense Points:%d\t\tSpecial Energy:%d/5", PlayerName,stat[0][1],stat[0][2],stat[0][3]);
   printf("\n\n%s(bot)\nHP:%d\t\tDefense Points:%d", BotName,stat[1][1],stat[1][2]);
 }
 
-void pickAction(){
+void pickAction(int round){
   user=0;
   do{
     int flag=0;
-    printf("\n\nChoose and Action\n[1]Attack\t[2]Defend\t[3]Heal\t\t[4]Special Attack\nChoice:");
+    printf("\n----- Round %d -----\n", round);
+    printf("\nChoose and Action\n[1]Attack\t[2]Defend\t[3]Heal\t\t[4]Special Attack\nChoice:");
     scanf("%d",&input);
 
     if(verifyInputSelection(input,1,4)){
       printf("\nSuch action does not exist.\n Please select again.\n");
     }else{
-      printf("\nPerforming");
 
       switch (input){
         case 1:{
-          int damage= attack(stat[1][2],BotName);
-          stat[1][1]-= damage;
-          stat[1][2]-= updatedefense(stat[1][2],damage);
-          flag=1;
+          flag=attack(stat[bot][dp],BotName);
           break;
         }
           
-        case 2:
-          
-          flag=1;
+        case 2:{
 
+          flag=defense();
           break;
-        case 3:
-          stat[0][1] += HEAL;
-          flag=1;
+        }
+          
+        case 3:{
+          flag=heal();
           break;
+        }
+          
         case 4:{
-          if(checkEnergy){
-           
-  			int damage;
-            printf("You(%s) dealt %dhp damage to %s.",SpecialAttack,damage, BotName);
+          if(checkEnergy()){
+            flag=ApplySpecialAttack(stat[bot][dp]);
           }else{
-            flag=0;
+              flag=0;
+          }
+          break;
           }
          
-          break;
+          
         }
        
       }
@@ -510,48 +523,129 @@ void botAction(){
 }
 int attack(int defense, char *name){
 
-    int init_damage = ((rand()%MAXDAMAGE)-defense);
-    int damage =init_damage-defense;
+    int init_damage = ((rand()%MAXDAMAGE)+1);
 
     if(damage<defense){
       if(!user){
         printf("Your attack got blocked by %s",name);
+        stat[bot][hp]-=damage;                                     //damage to bot
+
+        updatedefense(bot, init_damage);
       }else{
         printf("You blocked %s attack",name);
+        stat[player][hp]-=damage;                                 //damage to player
+
+        updatedefense(player, init_damage);
       }
-      defense-=damage;
-      return 0;
+      
+      return 1;
     }else{
       if(!user){
         printf("\nYou dealt %dhp damage to %s.\n\n",damage, name);
+        stat[bot][hp]-=damage;                                    //damage to bot
+
+        updatedefense(bot, init_damage);
       }else{
         printf("\n %s dealt %dhp damage to you",name,damage);
+        stat[player][hp]-=damage;                                 //damage to player
+
+        updatedefense(player, init_damage);
       }
-    return damage;
+    return 1;
     }
  
 }
 
 int updatedefense(int receiver, int damage){
-   if(receiver>damage){
-    return receiver-damage;
-   }else{
+  stat[receiver][dp]-=damage;                        //Reduce Defense
+
+  if(stat[receiver][dp] < 0) {                          //ensure that defense points is not negative.
+    stat[receiver][dp] = 0;
+  }
+
+  return stat[receiver][dp];
+}
+
+int defense(){
+  if(stat[user][2]<MAXDEFENSE){
+
+    stat[user][2]+=3;
+
+    if (stat[user][2]>=MAXDEFENSE){
+        if(!user)
+          printf("You have maxed out your ability to Defend.\n");
+        else
+          printf("Opponent maxed out the ability to Defend.");
+        stat[user][2]=MAXDEFENSE;
+        return 1;
+      }else{
+        if(!user)
+          printf("You can now Defend up to %dhp attacks.\n",stat[user][2]);
+        else
+          printf("Opponent increased its defense");
+        return 1;
+      }
+  }else{
+    if(!user)
+      printf("\nYou have already maxed out your ability to defend.\nChoose another move.");
     return 0;
-   }
+  }
+
 }
 
-void defense(){
-  stat[0][2] += DEFENSE;
-}
+int heal(){
+  if(stat[user][1]<TotalHP){
+    stat[user][1]+= HEAL;
 
+    if(stat[user][1]>=TotalHP){
+      if(!user)
+        printf("You healed back to Full HP.\n");
+      else
+        printf("Opponent is fully healed.\n");
+      stat[user][1]+= TotalHP;
+    }else{
+      if(!user)
+        printf("You gained %d from healing and now you have %dHP.", HEAL,stat[user][1]);
+      else
+        printf("Opponent healed %dhp.",HEAL);
+    }
+    return 1;
+  }else{
+    if(!user)
+      printf("You are already fully healed. You Cannot Heal at the moment Choose another move.\n");
+    return 0;
+  }
+}
 int checkEnergy(){
-  if(stat[0][3]<MINENERGY){
-    if(!user)printf("\nYou don't have enough Energy. \n Choose another action\n");
+  if(stat[user][3]<MINENERGY){
+    if(!user)
+      printf("\nYou don't have enough Energy. \n Choose another action.\n");
     return 0;
   }
   return 1;
 }
 
+int ApplySpecialAttack(int defense){
+  
+
+  if(!user){//Player to Bot
+    int init_damage = ((rand()%MAXDAMAGE)+1)*stat[player][3];
+    printf("\nYour %s dealt %dhp damage to %s.\n\n",SpecialAttack,damage, BotName);
+    stat[bot][hp]-=damage;                                    //damage to bot
+
+    updatedefense(bot, init_damage);
+  }else{//Bot To Player
+    int init_damage = ((rand()%MAXDAMAGE)+1)*stat[bot][3];
+    printf("\n %s's dealt %dhp damage to you",BotName,SpecialAttack,damage);
+    stat[player][hp]-=damage;                                 //damage to player
+
+    updatedefense(player, init_damage);
+  }
+  return 1;
+
+}
+
 void cleanScreen(){
   printf("\033[H\033[J");
 }
+

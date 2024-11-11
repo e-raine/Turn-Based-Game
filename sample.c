@@ -22,14 +22,13 @@ int move = 0, hp = 1, dp = 2, energy =3;
 #define MAXHP 200
 #define MINROUND 5
 #define MAXROUND 50
-#define MINENERGY 4
+#define MINENERGY 3
 #define MAXENERGY 10
-#define MAXDAMAGE 5+1
+#define MAXDAMAGE 5
 #define DEFENSE 3
 #define MAXDEFENSE 5
 #define HEAL 2
-#define MINSPECIALDAMAGE 10
-#define MAXSPECIALDAMAGE 50
+#define DAMAGE init_damage-defense
 
 //Stats
 int stat[2][4] ={{1,MAXHP,0,0},{1,MAXHP,0,0}};
@@ -62,7 +61,7 @@ int updatedefense(int receiver, int damage);
 int defense();
 int heal();
 int checkEnergy();
-void ApplySpecialAttack();
+int ApplySpecialAttack();
 
 //Common Function
 void delay(int milliseconds) {
@@ -222,9 +221,9 @@ void game(){
     displaystat();
     if(playermovedeterminer){
       pickAction(round);
-      printf("Bot Move\n\n");
+      botAction();
     }else{
-      printf("Bot Move\n");
+      botAction();
       pickAction();
     }
     cleanScreen();
@@ -447,95 +446,85 @@ void pickAction(int round){
           
         case 4:{
           if(checkEnergy()){
-            int init_damage = ((rand()%MAXDAMAGE)-defense());
-            int damage =init_damage-defense();
-              printf("Your %s dealt %dhp damage to %s.",SpecialAttack,damage, BotName);
-            }else{
-              flag=0;
-          }
-         
-          break;
-        }
-       
-      }
-
-    }
-      if(flag)
-        break;
-  }while(1);
-
-  //Move Increment
-  stat[0][0]+=1;
-
-  //Special Energy Increment
-  if (stat[0][3]<=MAXENERGY)
-    stat[0][3]+=1;
-}
-
-void botAction(){
-  user=0;
-  printf("Bot's Turn");
-
-  do{
-    int flag = 0;
-    int bot=(rand()%4)+1;
-
-    switch (bot){
-        case 1:{
-          int damage= attack(stat[user][2],BotName);
-          stat[0][1]-= damage;
-          stat[0][2]-= updatedefense(stat[0][2],damage);
-          flag=1;
-          break;
-        }
-          
-        case 2:
-          
-          flag=1;
-
-          break;
-        case 3:
-          stat[0][1] += HEAL;
-          flag=1;
-          break;
-        case 4:{
-          if(checkEnergy){
-            int damage=((rand()%MAXSPECIALDAMAGE+MINSPECIALDAMAGE)-stat[1][2]);
-            stat[1][1]-=damage;
-            printf("You(%s) dealt %dhp damage to %s.",SpecialAttack,damage, BotName);
+            flag=ApplySpecialAttack(stat[bot][dp]);
           }else{
             flag=0;
           }
-         
+          break;
+          }
+      }
+    }
+    if(flag)
+      break;
+  }while(1);
+
+  //Move Increment
+  stat[player][move]+=1;
+
+  //Special Energy Increment
+  if (stat[player][energy]<=MAXENERGY)
+    stat[player][energy]+=1;
+}
+
+void botAction(){
+  user=1;
+  printf("\nBot's Turn\n");
+
+  do{
+    int flag=0;
+    input=(rand()%4)+1;
+
+    switch (input){
+        case 1:{
+          flag=attack(stat[player][dp],BotName);
+          break;
+        }
+          
+        case 2:{
+
+          flag=defense();
+          break;
+        }
+          
+        case 3:{
+          flag=heal();
+          break;
+        }
+          
+        case 4:{
+          if(checkEnergy()){
+            flag=ApplySpecialAttack(stat[player][dp]);
+          }else{
+            flag=0;
+          }
           break;
         }
     }
-      if(flag)
-        break;
+    if(flag)
+      break;
   }while(1);
-  
+
   //Move Increment
-  stat[1][0]+=1;
+  stat[bot][0]+=1;
 
   //Special Energy Increment
-  if (stat[1][3]<=MAXENERGY)
-    stat[1][3]+=1;
+  if (stat[bot][3]<=MAXENERGY)
+    stat[bot][3]+=1;
 
 }
 int attack(int defense, char *name){
 
-    int init_damage = ((rand()%MAXDAMAGE));
-    int damage =init_damage-defense;
+    int init_damage = ((rand()%MAXDAMAGE)+1);
 
-    if(damage<defense){
+    if(DAMAGE<defense){
       if(!user){
         printf("Your attack got blocked by %s",name);
-        stat[bot][hp]-=damage;                                     //damage to bot
+        stat[bot][hp]-=DAMAGE;                                     //damage to bot
 
         updatedefense(bot, init_damage);
       }else{
         printf("You blocked %s attack",name);
-        stat[player][hp]-=damage;                                 //damage to player
+        stat[player][hp]-=DAMAGE;                                 //damage to player
 
         updatedefense(player, init_damage);
       }
@@ -543,13 +532,13 @@ int attack(int defense, char *name){
       return 1;
     }else{
       if(!user){
-        printf("\nYou dealt %dhp damage to %s.\n\n",damage, name);
-        stat[bot][hp]-=damage;                                    //damage to bot
+        printf("\nYou dealt %dhp damage to %s.\n\n",DAMAGE, name);
+        stat[bot][hp]-=DAMAGE;                                    //damage to bot
 
         updatedefense(bot, init_damage);
       }else{
-        printf("\n %s dealt %dhp damage to you",name,damage);
-        stat[player][hp]-=damage;                                 //damage to player
+        printf("\n %s dealt %dhp damage to you",name,DAMAGE);
+        stat[player][hp]-=DAMAGE;                                 //damage to player
 
         updatedefense(player, init_damage);
       }
@@ -625,6 +614,29 @@ int checkEnergy(){
     return 0;
   }
   return 1;
+}
+
+int ApplySpecialAttack(int defense){
+  
+
+  if(!user){//Player to Bot
+    int init_damage = ((rand()%MAXDAMAGE)+1)*stat[player][3];
+    printf("\nYour %s dealt %dhp damage to %s.\n\n",SpecialAttack,DAMAGE, BotName);
+    stat[bot][hp]-=DAMAGE;                                    //damage to bot
+
+    updatedefense(bot, init_damage);
+    stat[player][energy]=0;
+  }else{//Bot To Player
+    int init_damage = ((rand()%MAXDAMAGE)+1)*stat[bot][3];
+    printf("\n %s's dealt %dhp damage to you",BotName,SpecialAttack,DAMAGE);
+    stat[player][hp]-=DAMAGE;                                 //damage to player
+
+    updatedefense(player, init_damage);
+    stat[bot][energy]=0;
+  }
+  
+  return 1;
+
 }
 
 void cleanScreen(){
