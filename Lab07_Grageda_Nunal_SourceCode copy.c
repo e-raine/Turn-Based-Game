@@ -120,22 +120,29 @@ void menu()
 		scanf("%d", &input);
 
 		if(verifyInputSelection(input,1,2))
-		  printf("\nOption does not Exist\nTry Again!\n\n");
+        {
+		    printf("\nOption does not Exist\nTry Again!\n\n");
+            delay(1250);
+            cleanScreen();
+        }
         else
-		  break;
-	}
+        {
+		    break;
+        }
+    }
     while(1);
 
 	switch(input){
 		case 1:
             printf("\nCreating New Game\n\n");
+            delay(1000);
             gameSetup();
             cleanScreen();             
             coinflip();
             game();
             break;
 		case 2:
-		    printf("2");
+            printf("\nYou have exited the game... Have a nice day (❁´◡`❁).\n\n");
 			break;
 	}
 }// end of menu
@@ -153,7 +160,7 @@ void menu()
     void gameSetup()
     {                                
         cleanScreen();
-        int gameSetupFlag=1;
+        int gameSetupFlag = 1;
         
         do
         {
@@ -180,7 +187,7 @@ void menu()
                 {
                     if(toupper(c_input)=='Y')
                     {
-                        gameSetupFlag=0;
+                        gameSetupFlag = 0;
                         break;
                     }
                     else if(toupper(c_input)=='N')
@@ -189,7 +196,6 @@ void menu()
                         {
                             cleanScreen();
                             printf("Which do you want to change?\n[1]Theme\\Character\n[2]Maximum Health Points\n[3]Total of Rounds\n\nChoice:");
-                            
                             scanf("%d",&input);
 
                             if(verifyInputSelection(input,1,3))
@@ -201,10 +207,10 @@ void menu()
                                 break;
                         }
                         while(1);
-                        
+                        cleanScreen();
                         switch(input)
                         {
-                            case 1:
+                            case 1: 
                                 chooseTheme();
                                 break;
                             case 2:
@@ -225,7 +231,7 @@ void menu()
 
     void coinflip()
     {
-    printf("COINFLIP\nFirst Move will be decided by a coin flip.\n");
+    printf("COINFLIP\nFirst Move will be decided by a coin flip.\n\n");
     
     do
     {
@@ -240,15 +246,17 @@ void menu()
         {
             int coin = (rand()%2)+1;
 
-            if(coin==input)
+            if(coin == input)
             {
-                playermovedeterminer=1;
+                playermovedeterminer = 1;
                 printf("You get to move first.\n\n");
+                delay(800);
             }
             else
             {
-                playermovedeterminer=0;
+                playermovedeterminer = 0;
                 printf("\nOpponent get to move first.\n\n");
+                delay(800);
             }
 
             int i;
@@ -275,7 +283,8 @@ void menu()
         cleanScreen();
 
         int round = 1;
-
+        int j = 0;
+        
         do
         {
             displaystat();
@@ -292,7 +301,9 @@ void menu()
                 delay(1000);
                 pickAction(round);
             }
-
+            if (j > 0){
+                cleanScreen();
+            }
             cleanScreen();
             round++;
         }
@@ -364,7 +375,6 @@ void menu()
                 }
             }
             while(1);
-            delay(1000);
             cleanScreen();
         } // end of chooseMaxHP
 
@@ -392,7 +402,6 @@ void menu()
                 }
             }
             while(1);
-            delay(1000);
             cleanScreen();
         } // end of chooseRounds
 
@@ -763,6 +772,7 @@ void menu()
             }
 
 void cleanScreen(){
-  printf("\033[H\033[J");
+    delay(1000);
+    printf("\033[H\033[J");
 }
 
