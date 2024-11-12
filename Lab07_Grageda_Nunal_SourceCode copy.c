@@ -68,6 +68,7 @@ void gameSetup();                                      // [6]
 void coinflip();                                       // [7]
 void game();                                           // [8]
 void cleanScreen();                                    // [9]
+void display(int x); // [23]
 
 
 //GameSetup Functions
@@ -162,19 +163,18 @@ void menu()
         cleanScreen();
         int gameSetupFlag = 1;
         
+
         do
         {
-
             chooseTheme();
             chooseMaxHP();
             chooseRounds();
-            cleanScreen();
 
             do
             {
                 char c_input;
-
-                printf("Game SETUP:\nTheme: %s\nCharacter:%s\nOpponent:%s\nMaximum Health Points: %d\nTotal of Rounds:%d\n\nConfirm Game Setup[Y/N]",themeSelect,PlayerName,BotName,stat[0][1],TotalRounds);
+                display(0);
+                printf("Theme: %s\nCharacter:%s\nOpponent:%s\nMaximum Health Points: %d\nTotal of Rounds:%d\n\nConfirm Game Setup[Y/N]?",themeSelect,PlayerName,BotName,stat[0][1],TotalRounds);
                 getchar() != '\n';         //To make sure that it won't skip to line 138;
                 scanf("%c",&c_input);
 
@@ -231,10 +231,10 @@ void menu()
 
     void coinflip()
     {
-    printf("COINFLIP\nFirst Move will be decided by a coin flip.\n\n");
-    
+
     do
     {
+        display(4);
         printf("Choose a coin side\n[1]Heads\n[2]Tails\nSide:");
         scanf("%d",&input);
 
@@ -249,7 +249,7 @@ void menu()
             if(coin == input)
             {
                 playermovedeterminer = 1;
-                printf("You get to move first.\n\n");
+                printf("\nYou get to move first.\n\n");
                 delay(800);
             }
             else
@@ -313,8 +313,7 @@ void menu()
 
         void chooseTheme()
         {
-            printf("Game Setup\n");
-
+            display(0);
             do
             {
                 printf("Please choose a theme:\n[1]Valorant\n[2]GTA V\n[3]F1\n\nChoice:");
@@ -346,15 +345,15 @@ void menu()
                     break;
             }
 
-            cleanScreen();
         } // end of chooseTheme
 
 
         void chooseMaxHP()
         {
-            printf("Game Setup\n");
             do
             {
+                cleanScreen();
+                display(0);
                 printf("Please Enter Maximum Health Points(%dhp-%dhp)\n\nHealth Points:", MINHP, MAXHP);
                 scanf("%d",&input);
 
@@ -375,25 +374,25 @@ void menu()
                 }
             }
             while(1);
-            cleanScreen();
         } // end of chooseMaxHP
 
 
         void chooseRounds()
         {
-            printf("Game Setup\n");
 
             do
             {
-                printf("Enter the number of rounds you want to play:\n");
+                cleanScreen();
+                display(0);
+                printf("Enter the number of rounds you want to play. \n\nChoice: ");
                 scanf("%d",&input);
 
                 if(verifyInputSelection(input,MINROUND,MAXROUND))
                 {
                     if(input<MINROUND)
-                        printf("You can only play a MINIMUM 5 rounds.\n Try Again");
+                        printf("You can only play a MINIMUM 5 rounds.\nTry Again");
                     if(input>MAXROUND)
-                        printf("You can only play a MAXIMUM of 50 rounds.\n Try Again");
+                        printf("You can only play a MAXIMUM of 50 rounds.\nTry Again");
                 }
                 else
                 {
@@ -410,16 +409,16 @@ void menu()
             {
                 char *CharactersName []={"Jett","Phoenix","Raze","Sova","Breach","Sage","Cypher","Brimstone","Viper","Omen"};
                 int CharacterSize = sizeof(CharactersName)/sizeof(CharactersName[0]);
-                
+
+                display(1);
                 do
                 {
-                    printf("\nChoose an Agent\n");
                     
-                    int i=1;
-                    for(;i<=CharacterSize;i++)
-                        printf("[%d] %s\n",i,CharactersName[i-1]);
+                    int i = 1;
+                    for(;i <= CharacterSize; i++)
+                        printf("[%d] %s\n", i ,CharactersName[i-1]);
 
-                    printf("\n\nChoice:");
+                    printf("\nChoice:");
                     scanf("%d", &input);
 
                     if(verifyInputSelection(input,1,CharacterSize))
@@ -442,9 +441,8 @@ void menu()
                 char *CharactersName []={"Franklin","Michael","Trevor"};
                 int CharacterSize = sizeof(CharactersName)/sizeof(CharactersName[0]);
 
+                display(2);
                 do{
-                    printf("\nChoose a Character\n");
-                    
                     int i=1;
                     for(;i<=CharacterSize;i++)
                         printf("[%d] %s\n",i,CharactersName[i-1]);
@@ -471,9 +469,9 @@ void menu()
                 char *CharactersName []={"Max Verstrappen","Charles Leclerc","Lewis Hamilton"};
                 int CharacterSize = sizeof(CharactersName)/sizeof(CharactersName[0]);
 
+                display(3);
                 do
                 {
-                    printf("\nChoose a Driver\n");
 
                     int i=1;
                     for(;i<=CharacterSize;i++)
@@ -510,7 +508,7 @@ void menu()
                 }
                 while(1);
                 
-                printf("\nThe opponent have selected %s.",BotName);
+                printf("\nThe opponent have selected %s.\n",BotName);
             } // botSelect
 
 
@@ -771,8 +769,37 @@ void menu()
                 return 1;
             }
 
-void cleanScreen(){
+void cleanScreen()
+{
     delay(1000);
     printf("\033[H\033[J");
 }
 
+void display(int x)
+{                
+    cleanScreen();
+    if (x == 0 || x < 4)
+    {
+        printf("._______________.\t\n");
+        printf("|   Game Setup  |\n");
+        printf("._______________.\t\n\n");
+        switch (x)
+        {
+            case 1:
+                printf("Choose an Agent\n");
+                break;
+            case 2:
+                printf("Choose a Character\n");
+                break;
+            case 3:
+                printf("Choose a Driver\n");
+                break;
+        }
+    }
+    else if(x == 4){
+        printf("._______________.\t\n");
+        printf("|   COINFLIP    |\n");
+        printf("._______________.\t\n\n");
+        printf("First Move will be decided by a coin flip.\n\n");
+    }
+}
