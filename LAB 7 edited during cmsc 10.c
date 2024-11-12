@@ -27,7 +27,7 @@ defend reset every turn
 #include <ctype.h>
 
 //Global Variables
-int input;
+int input, verify;
 char *PlayerName;
 char *BotName;
 char *SpecialAttack;
@@ -61,7 +61,6 @@ int stat[2][4] = {{1,MAXHP,0,0},{1,MAXHP,0,0}};
 //Prototypes
 void menu();                                           // [1]
 int verifyInputSelection(int input,int min,int max);   // [2]
-void displaystat();                                    // [3]
 void pickAction();                                     // [4] 
 void botAction();                                      // [5]
 void gameSetup();                                      // [6]
@@ -69,7 +68,9 @@ void coinflip();                                       // [7]
 void game();                                           // [8]
 void cleanScreen();                                    // [9]
 void display(int x); // [23]
-
+void roundDisplay(int round); // [24]
+void load(int x); // [25]
+int verifyscanf(int x);
 
 //GameSetup Functions
 void chooseTheme();                                    // [10]
@@ -104,9 +105,10 @@ void delay(int milliseconds) {
 //Main Function
 void main()
 {
-    srand(time(NULL));
+    srand(time(NULL));          //Important for the Rand function
 
 	printf("Welcome to Ultimate Showdown\n\n");
+    delay(2000); //Welcome Screen
 	menu();
 } // end of main
 
@@ -118,54 +120,45 @@ void menu()
     do
     {
 		printf("Ultimate Showdown \n[1]New Game\n[2]Exit Game\nChoice:");
-		scanf("%d", &input);
+		verify=scanf("%d", &input);
 
-		if(verifyInputSelection(input,1,2))
-        {
-		    printf("\nOption does not Exist\nTry Again!\n\n");
-            delay(1250);
-            cleanScreen();
-        }
-        else
-        {
-		    break;
+        if(verifyscanf(verify)){
+            
+            if(verifyInputSelection(input,1,2))
+            {
+                cleanScreen();
+                printf("\nOption does not Exist\nTry Again!\n\n");
+                delay(1000);
+                cleanScreen();
+            }
+            else
+            {
+                break;
+            }
         }
     }
     while(1);
 
 	switch(input){
 		case 1:
-            printf("\nCreating New Game\n\n");
-            delay(1000);
-            gameSetup();
-            cleanScreen();             
+            load(input);
+            gameSetup();           
             coinflip();
             game();
             break;
 		case 2:
-            printf("\nYou have exited the game... Have a nice day (❁´◡`❁).\n\n");
+            load(input);
 			break;
 	}
 }// end of menu
-
-
-    int verifyInputSelection(int input,int min,int max)
-    {
-    if(input<min||input>max)
-        return 1;
-    else
-        return 0;
-    } // end of verifyInputSelection
-
 
     void gameSetup()
     {                                
         cleanScreen();
         int gameSetupFlag = 1;
         
-
         do
-        {
+        {   
             chooseTheme();
             chooseMaxHP();
             chooseRounds();
@@ -259,17 +252,7 @@ void menu()
                 delay(800);
             }
 
-            int i;
-
-            printf("Loading");
-
-            for(;i<3;i++)
-            {
-            delay(800);
-            printf(".");
-            }
-
-            printf("\n");
+            load(0);
 
             break;
         }
@@ -287,11 +270,12 @@ void menu()
         
         do
         {
-            displaystat();
+            roundDisplay(round);
+            display(5);
 
             if(playermovedeterminer)
             {
-                pickAction(round);
+                pickAction();
                 delay(1000);
                 botAction();
             }
@@ -299,7 +283,7 @@ void menu()
             {
                 botAction();
                 delay(1000);
-                pickAction(round);
+                pickAction();
             }
             if (j > 0){
                 cleanScreen();
@@ -307,19 +291,20 @@ void menu()
             cleanScreen();
             round++;
         }
-        while(round <=  TotalRounds);
+        while(round <= TotalRounds);
     } // end of game
 
 
         void chooseTheme()
         {
-            display(0);
+
             do
-            {
-                printf("Please choose a theme:\n[1]Valorant\n[2]GTA V\n[3]F1\n\nChoice:");
+            {   
+                display(0);
+                printf("Please choose a theme:\n[1]Valorant\n[2]GTA V\n[3]F1\n\nChoice: ");
                 scanf("%d", &input);
 
-                if(verifyInputSelection(input,1,4))
+                if(verifyInputSelection(input, 1, 4))
                     printf("Theme does not Exist\n Try Again!\n");
                 else
                     break;
@@ -329,12 +314,12 @@ void menu()
             switch(input)
             {
                 case 1:
-                    themeSelect="Valorant";
+                    themeSelect = "Valorant";
                     valorant();
                     delay(1000);
                     break;
                 case 2:
-                    themeSelect="GTA V";
+                    themeSelect = "GTA V";
                     gtav();
                     delay(1000);
                     break;
@@ -350,19 +335,22 @@ void menu()
 
         void chooseMaxHP()
         {
+        
             do
             {
                 cleanScreen();
                 display(0);
-                printf("Please Enter Maximum Health Points(%dhp-%dhp)\n\nHealth Points:", MINHP, MAXHP);
+                printf("Please Enter Maximum Health Points(%dhp-%dhp)\n\nHealth Points: ", MINHP, MAXHP);
                 scanf("%d",&input);
 
                 if(verifyInputSelection(input , MINHP, MAXHP))
                 {
+                   cleanScreen();
                     if(input < MINHP)
                         printf("\nHP is too small, input a larger amount of health points");
                     if(input > MAXHP)
                         printf("\nHP is too Big, input a smaller amount of health points");
+                    delay(2000);
                 }
                 else
                 {
@@ -385,18 +373,18 @@ void menu()
                 cleanScreen();
                 display(0);
                 printf("Enter the number of rounds you want to play. \n\nChoice: ");
-                scanf("%d",&input);
+                scanf("%d", &input);
 
-                if(verifyInputSelection(input,MINROUND,MAXROUND))
+                if(verifyInputSelection(input, MINROUND, MAXROUND))
                 {
-                    if(input<MINROUND)
+                    if(input < MINROUND)
                         printf("You can only play a MINIMUM 5 rounds.\nTry Again");
-                    if(input>MAXROUND)
+                    if(input > MAXROUND)
                         printf("You can only play a MAXIMUM of 50 rounds.\nTry Again");
                 }
                 else
                 {
-                    TotalRounds=input;
+                    TotalRounds = input;
                     break;
                 }
             }
@@ -499,9 +487,9 @@ void menu()
                 do
                 {
                     int i=rand()%size-1;
-                    delay(1000);
                     printf("\n\nBot Selecting a Character \n");
-                    BotName=CharactersName[i];
+                    delay(1000);
+                    BotName = CharactersName[i];
                     
                     if(PlayerName!=BotName)
                         break;
@@ -509,15 +497,8 @@ void menu()
                 while(1);
                 
                 printf("\nThe opponent have selected %s.\n",BotName);
+                load(0);
             } // botSelect
-
-
-        void displaystat()
-        {
-            printf("%s(you)\nHP:%d\t\tDefense Points:%d\t\tSpecial Energy:%d/5", PlayerName,stat[0][1],stat[0][2],stat[0][3]);
-            printf("\n\n%s(bot)\nHP:%d\t\tDefense Points:%d", BotName,stat[1][1],stat[1][2]);
-        } // end displaystat
-
 
         void pickAction(int round)
         {
@@ -525,7 +506,6 @@ void menu()
             do
             {
                 int flag=0;
-                printf("\n----- Round %d -----\n", round);
                 printf("\nChoose and Action\n[1]Attack\t[2]Defend\t[3]Heal\t\t[4]Special Attack\nChoice:");
                 scanf("%d",&input);
 
@@ -771,35 +751,104 @@ void menu()
 
 void cleanScreen()
 {
-    delay(1000);
     printf("\033[H\033[J");
 }
 
 void display(int x)
-{                
-    cleanScreen();
-    if (x == 0 || x < 4)
+{    
+    if (x != 5)
     {
-        printf("._______________.\t\n");
-        printf("|   Game Setup  |\n");
-        printf("._______________.\t\n\n");
-        switch (x)
+        cleanScreen();
+        if (x == 0 || x < 4)
         {
-            case 1:
-                printf("Choose an Agent\n");
-                break;
-            case 2:
-                printf("Choose a Character\n");
-                break;
-            case 3:
-                printf("Choose a Driver\n");
-                break;
+            printf("._______________.\t\n");
+            printf("|   Game Setup  |\n");
+            printf("._______________.\t\n\n");
+            switch (x)
+            {
+                case 1:
+                    printf("Choose an Agent\n");
+                    break;
+                case 2:
+                    printf("Choose a Character\n");
+                    break;
+                case 3:
+                    printf("Choose a Driver\n");
+                    break;
+            }
+        }
+        else{
+            printf("._______________.\t\n");
+            printf("|   COINFLIP    |\n");
+            printf("._______________.\t\n\n");
+            printf("First Move will be decided by a coin flip.\n\n");
         }
     }
-    else if(x == 4){
-        printf("._______________.\t\n");
-        printf("|   COINFLIP    |\n");
-        printf("._______________.\t\n\n");
-        printf("First Move will be decided by a coin flip.\n\n");
+    else
+    {
+        printf("%s(you)\nHP:%d\t\tDefense Points:%d\t\tSpecial Energy:%d/5", PlayerName,stat[0][1],stat[0][2],stat[0][3]);
+        printf("\n\n%s(bot)\nHP:%d\t\tDefense Points:%d", BotName,stat[1][1],stat[1][2]);
     }
+
+}
+
+int verifyInputSelection(int input,int min,int max)
+    {
+    
+    if(input<min||input>max)
+        return 1;
+    else
+        return 0;
+    } // end of verifyInputSelection
+
+void roundDisplay(int round){
+    printf("\n----- Round %d -----\n", round);
+}
+
+
+void load(int x){       //Game load
+    int i;
+
+    if (x == 1 )
+    {
+        printf("\nCreating New Game");
+        for(; i<3; i++)
+        {
+            delay(800);
+            printf(".");
+        } 
+        return;
+    }
+    else if (x == 2){
+        printf("\nYou have exited the game... Have a nice day (❁´◡`❁).\n\n");
+        return;    
+    }
+    else
+    {
+        printf("Loading");
+
+         for(; i<3; i++)
+        {
+            delay(800);
+            printf(".");
+        } 
+        return;
+    }
+}
+
+int verifyscanf(int x)
+{
+    if (x!=)
+    {
+        while (getchar() != '\n'); 
+        cleanScreen()
+        printf("Invalid input!\nPlease enter an integer.\n");
+        delay(2000);
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+
 }
