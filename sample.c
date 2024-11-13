@@ -294,7 +294,6 @@ void game()
 			playerAction = pickAction(round);
 			if(checkHealth(bot,round))
 				break;
-			printf("Yawa");
 			compAction = botAction(round);
 			if(checkHealth(player,round))
 				break;
@@ -303,7 +302,6 @@ void game()
 			compAction = botAction(round);
 			if(checkHealth(player,round))
 				break;
-			printf("Yawa");
 			playerAction = pickAction(round);
 			if(checkHealth(bot,round))
 				break;
@@ -726,6 +724,7 @@ int defense()
 int heal()
 {
 	if(stat[user][1] < TotalHP) {
+		
 		stat[user][1] += HEAL;
 
 		if(stat[user][1] >= TotalHP) {
@@ -750,7 +749,7 @@ int heal()
 	} else {
 		if(!user) {
 			cleanScreen();
-			printf("\n-------------------------\nYou are already fully healed.\n You Cannot Heal at the moment.\n-------------------------\n Choose another move.\n");
+			printf("\n-------------------------\nYou are already fully healed.\nYou Cannot Heal at the moment.\n-------------------------\nChoose another move.\n");
 			delay(1500);
 		}
 		return 0;
@@ -929,15 +928,15 @@ int checkHealth(int opp, int round){
 	switch(opp)
 	{
 		case 2:
-			if(stat[player][hp]>stat[bot][hp])
+			if(stat[player][hp]==stat[bot][hp])	
+				winner = 3;
+			else if(stat[player][hp]>stat[bot][hp])
 				winner = player;
 			else
 				winner = bot;
-			if(stat[player][hp]==stat[bot][hp])
-				winner = 3;
 			return 1;
-		default: 
 		
+		default: 
 		if(round>TotalRounds)
 		{
 			if(stat[opp][1]<=0)
