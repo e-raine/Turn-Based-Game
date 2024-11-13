@@ -63,8 +63,8 @@ int stat[2][4] = {{1,MAXHP,0,0},{1,MAXHP,0,0}};
 //Prototypes
 void menu();                                           // [1]
 int user_input(char type,int min,int max);   // [2]
-void pickAction();                                     // [4]
-void botAction();                                      // [5]
+int pickAction(int round);                                     // [4]
+int botAction(int round);                                      // [5]
 void gameSetup();                                      // [6]
 void coinflip();                                       // [7]
 void game();                                           // [8]
@@ -72,7 +72,8 @@ void cleanScreen();                                    // [9]
 void display(int x); // [23]
 void gameDisplay(int round); // [24]
 void load(int x); // [25]
-void displaySummary();
+void appendSummary(int round, int player, int comp, int x, int y, int d);
+void displaySummary(int x);
 
 
 //GameSetup Functions
@@ -120,6 +121,7 @@ int delay(int milliseconds)
 }
 int confirm()
 {
+	delay(1000);
 	printf("\n\nContinue");
 
 	//Clear Input Buffer
@@ -156,9 +158,9 @@ void menu()
 	cleanScreen();
 
 	do {
-		printf("Ultimate Showdown \n[1]New Game\n[2]Exit Game\nChoice:");
+		printf("Ultimate Showdown \n[1]New Game\n[2]Exit Game\nChoice: ");
 
-		result=user_input('i',1,2);
+		result = user_input('i',1,2);
 		if(result) {
 			if(result==2) {
 				printf("Option does not Exist\nTry Again!\n\n");
@@ -166,7 +168,6 @@ void menu()
 				cleanScreen();
 			}
 		}
-
 		else {
 			break;
 		}
@@ -197,7 +198,7 @@ void gameSetup()
 		do {
 			char c_input;
 			display(0);
-			printf("Theme: %s\nCharacter:%s\nOpponent:%s\nMaximum Health Points: %d\nTotal of Rounds:%d\n\nConfirm Game Setup[Y/N]?",themeSelect,PlayerName,BotName,stat[0][1],TotalRounds);
+			printf("Theme: %s\nCharacter:%s\nOpponent:%s\nMaximum Health Points: %d\nTotal of Rounds:%d\n\nConfirm Game Setup[Y/N]? ",themeSelect,PlayerName,BotName,stat[0][1],TotalRounds);
 
 			scanf(" %c",&c_input);
 
@@ -212,7 +213,7 @@ void gameSetup()
 				} else if(toupper(c_input)=='N') {
 					do {
 						cleanScreen();
-						printf("Which do you want to change?\n[1]Theme\\Character\n[2]Maximum Health Points\n[3]Total of Rounds\n\nChoice:");
+						printf("Which do you want to change?\n[1]Theme\\Character\n[2]Maximum Health Points\n[3]Total of Rounds\n\nChoice: ");
 
 						result=user_input('i',1,3);
 						if(result) {
@@ -249,13 +250,18 @@ void coinflip()
 
 	do {
 		display(4);
-		printf("Choose a coin side\n[1]Heads\n[2]Tails\nSide:");
+		printf("Choose a coin side\n[1]Heads\n[2]Tails\nSide: ");
 
-		result=user_input('i',1,2);
+		result = user_input('i',1,2);
 		if(result) {
-			if(result==2)
+			if(result==2){
+				cleanScreen();
 				printf("\nPlease Select Head or Tails only.\n");
-		} else {
+				delay(1000);
+			}
+		} 
+		else 
+		{
 			int coin = (rand()%2)+1;
 
 			load(3);
@@ -277,24 +283,26 @@ void coinflip()
 	} while(1);
 } // end of coinflip
 
-
+//GameFunction
 void game()
 {
 	cleanScreen();
-
 	int round = 1;
+	int playerAction, compAction;
 
 	do {
 		if(playermovedeterminer) {
-			pickAction(round);
-			botAction(round);
+			playerAction = pickAction(round);
+			compAction = botAction(round);
+			appendSummary(round, playerAction, compAction, stat[player][1], stat[bot][1], playermovedeterminer);
 		} else {
-			botAction(round);
-			pickAction(round);
+			compAction = botAction(round);
+			playerAction = pickAction(round);
+			appendSummary(round, playerAction, compAction, stat[bot][1], stat[player][1], playermovedeterminer);
 		}
 		round++;
 	} while(round <= TotalRounds);
-	displaySummary();
+	displaySummary(playermovedeterminer);
 } // end of game
 
 //Game Setup Functions
@@ -399,7 +407,7 @@ void valorant()
 		int i = 1;
 		for(; i <= CharacterSize; i++)
 			printf("[%d] %s\n", i,CharactersName[i-1]);
-		printf("\nChoice:");
+		printf("\nChoice: ");
 
 		result=user_input('i',1,CharacterSize);
 		if(result) {
@@ -422,7 +430,7 @@ void gtav()
 		int i;
 		for(; i<=CharacterSize; i++)
 			printf("[%d] %s\n",i,CharactersName[i-1]);
-		printf("\n\nChoice:");
+		printf("\n\nChoice: ");
 
 		result=user_input('i',1,CharacterSize);
 		if(result) {
@@ -446,7 +454,7 @@ void f1()
 		int i=1;
 		for(; i<=CharacterSize; i++)
 			printf("[%d] %s\n",i,CharactersName[i-1]);
-		printf("\n\nChoice:");
+		printf("\n\nChoice: ");
 
 		result=user_input('i',1,CharacterSize);
 		if(result) {
@@ -497,59 +505,53 @@ void botSelect(int size, char *CharactersName[])
 } // botSelect
 
 //Move
-void pickAction(int round)
+int pickAction(int round)
 {
 	user=0;
-	char *moveName;
 
 	do {
 		int flag=0;
 		gameDisplay(round);
-		printf("Choose and Action\n[1]Attack\t[2]Defend\t[3]Heal\t\t[4]Special Attack\nChoice:");
-
-		result=user_input('i',1,4);
+		printf("Choose and Action\n[1]Attack\n[2]Defend\n[3]Heal\n[4]Special Attack\nChoice:");
+		result = user_input('i',1,4);
+		printf("This result = %d", result);
 		if(result) {
 			if(result==2) {
 				cleanScreen();
-				printf("\nSuch action does not exist.\nPlease select again.\n");
+				printf("Such action does not exist.\nPlease select again.\n");
 				confirm();
 			}
-		} else {
+		} 
+		else {
+			printf("This works");
 			switch (input) {
 				case 1:
 					flag = attack(stat[bot][dp], BotName);
-					moveName = "Attack";
 					break;
 				case 2:
 					flag = defense();
-					moveName = "Defend";
 					break;
 				case 3:
 					flag = heal();
-					moveName = "Heal";
 					break;
 				case 4:
 					if (checkEnergy()) {
 						flag = ApplySpecialAttack(stat[bot][dp]);
-						moveName = "Special Attack";
 					} else {
 						flag = 0;
 					}
 					break;
 			}
-			// Log player move for summary
-			summary[summaryIndex].round = round;
-			strcpy(summary[summaryIndex].playerMove, moveName);
-			summary[summaryIndex].playerHP = stat[player][1];
-			summary[summaryIndex].botHP = stat[bot][1];
 		}
 		if(flag) {
+			confirm();
+			
 			stat[player][move] += 1;
 
 			//Special Energy Increment
 			if (stat[player][energy] < MAXENERGY)
 				stat[player][energy] += 1;
-			break;
+			return input;
 		}
 
 	} while(1);
@@ -557,62 +559,49 @@ void pickAction(int round)
 	//Move Increment
 
 } // end pickAction
-void botAction(int round)
+
+int botAction(int round)
 {
-	char *moveName;
 	gameDisplay(round);
 	user=1;
 
 	do {
 		int flag=0;
-		input=(rand()%4)+1;
-
-
+		input = (rand()%4)+1;
 
 		switch (input) {
 			case 1: {
 				flag = attack(stat[player][dp], BotName);
-				moveName = "Attack";
 				break;
 			}
-
 			case 2: {
 				flag = defense();
-				moveName = "Defend";
 				break;
 			}
-
 			case 3: {
 				flag = heal();
-				moveName = "Heal";
 				break;
 			}
-
 			case 4: {
 				if (checkEnergy()) {
 					flag = ApplySpecialAttack(stat[player][dp]);
-					moveName = "Special Attack";
 				} else {
 					flag = 0;
 				}
 				break;
 			}
 		}
-		// Log bot move for summary
-		strcpy(summary[summaryIndex].botMove, moveName);
-		summary[summaryIndex].playerHP = stat[player][1];
-		summary[summaryIndex].botHP = stat[bot][1];
-
-		summaryIndex++; // Increment summary index at the end of the round
 
 		if(flag) {
+			confirm();
+
 			//Move Increment
 			stat[bot][0]+=1;
 
 			//Special Energy Increment
 			if (stat[bot][energy]<MAXENERGY)
 				stat[bot][energy]+=1;
-			break;
+			return input;
 		}
 	} while(1);
 
@@ -623,6 +612,8 @@ void botAction(int round)
 int attack(int defense, char *name)
 {
 	int init_damage = ((rand()%MAXDAMAGE)+1);
+	delay(200);
+
 
 	if(DAMAGE<defense) {
 		if(!user) {
@@ -639,7 +630,6 @@ int attack(int defense, char *name)
 			printf("You blocked %s attack.\n",name);
 		}
 
-		confirm();
 		return 1;
 	} else {
 		if(!user) {
@@ -654,7 +644,6 @@ int attack(int defense, char *name)
 			printf("\n-------------------------\n%s dealt %dhp damage to you.\n-------------------------\n",name,DAMAGE);
 		}
 
-		confirm();
 		return 1;
 	}
 } // end of attack
@@ -681,7 +670,6 @@ int defense()
 			} else
 				printf("\n-------------------------\nOpponent maxed out the ability to Defend.\n-------------------------\n");
 
-			confirm();
 			return 1;
 		} else {
 			gameDisplay(0);
@@ -692,13 +680,11 @@ int defense()
 			} else
 				printf("\n-------------------------\nOpponent increased its defense.\n-------------------------\n");
 
-			confirm();
 			return 1;
 		}
 	} else {
 		if(!user) {
 			printf("\n-------------------------\nYou have already maxed out your ability to defend.\n-------------------------\nChoose another move.");
-			confirm();
 		}
 		return 0;
 	}
@@ -709,7 +695,7 @@ int heal()
 		stat[user][1]+= HEAL;
 
 		if(stat[user][1]>=TotalHP) {
-			stat[user][1]+= TotalHP;
+			stat[user][1]+= (TotalHP - stat[user][1]);
 			gameDisplay(0);
 
 			if(!user)
@@ -718,7 +704,6 @@ int heal()
 			else
 				printf("\n-------------------------\nOpponent is fully healed.\n-------------------------\n");
 
-			confirm();
 		} else {
 			gameDisplay(0);
 
@@ -728,14 +713,12 @@ int heal()
 				printf("\nOpponent healed %dhp.\n",HEAL);
 
 
-			confirm();
 			return 1;
 		}
 	} else {
 		if(!user) {
 
 			printf("\n-------------------------\nYou are already fully healed.\n You Cannot Heal at the moment.\n-------------------------\n Choose another move.\n");
-			confirm();
 		}
 		return 0;
 	}
@@ -745,7 +728,6 @@ int checkEnergy()
 	if(stat[user][3]<MINENERGY) {
 		if(!user) {
 			printf("\n-------------------------\nYou don't have enough Energy. \n-------------------------\n Choose another action.\n");
-			confirm();
 		}
 		return 0;
 	}
@@ -762,7 +744,6 @@ int ApplySpecialAttack(int defense)
 		updatedefense(bot, init_damage);
 		stat[player][energy]=0;
 		printf("\n-------------------------\nYour %s dealt %dhp damage to %s.\n-------------------------\n\n",SpecialAttack,DAMAGE, BotName);
-		confirm();
 
 	} else {
 		//Bot To Player
@@ -773,7 +754,6 @@ int ApplySpecialAttack(int defense)
 		stat[bot][energy]=0;
 		gameDisplay(0);
 		printf("\n-------------------------\n%s's dealt %dhp damage to you\n-------------------------\n",BotName,SpecialAttack,DAMAGE);
-		confirm();
 	}
 
 	return 1;
@@ -784,6 +764,7 @@ void cleanScreen()
 {
 	printf("\033[H\033[J");
 }
+
 void display(int x)
 {
 	if (x != 5) {
@@ -834,7 +815,7 @@ int user_input(char type,int min,int max)
 
 	switch(type) {
 		case 'i': {
-			flag=scanf("%d",&input);
+			flag=scanf(" %d",&input);
 
 			if(flag) {
 				break;
@@ -861,9 +842,13 @@ int user_input(char type,int min,int max)
 	}
 
 	if(input<min||input>max)
+	{
 		return 2;
+	}
 	else
+	{
 		return 0;
+	}	
 } // end of user_input
 void load(int x)        //Game load
 {
@@ -878,11 +863,8 @@ void load(int x)        //Game load
 			}
 			return;
 		}
-
-
-
 		case 2: {
-			printf("\nYou have exited the game... Have a nice day (âÂ´â—¡`â).\n\n");
+			printf("\nYou have exited the game... Have a nice day.\n\n");
 			return;
 		}
 		case 3: {
@@ -907,23 +889,140 @@ void load(int x)        //Game load
 }
 
 
-void displaySummary()
-{
-	cleanScreen();
-	printf("\n----- Game Summary -----\n");
-	printf("+--------+-------------------+-------------------+-------------------+-------------------+\n");
-	printf("| Round  |   Player Move      |   Bot Move        |   Player HP       |   Bot HP          |\n");
-	printf("+--------+-------------------+-------------------+-------------------+-------------------+\n");
+void appendSummary(int round, int player, int comp, int x, int y, int d){
+	// determining the move name
+	char *moveName;
+	if (d == 1){
+		switch (result){
+			case 1: 
+				moveName = "Attack";
+				break;
+			case 2:
+				moveName = "Defend";
+				break;
+			case 3:
+				moveName = "Heal";
+				break;
+			case 4: 
+				moveName = "Special Attack";
+				break;
+		} // end of switch
+		// Log player move for summary
+		summary[summaryIndex].round = round;
+		strcpy(summary[summaryIndex].playerMove, moveName);
 
-	for (int i = 0; i < summaryIndex; i++) {
-		printf("| %-6d | %-17s | %-17s | %-17d | %-17d |\n",
-			  summary[i].round,
-			  summary[i].playerMove,
-			  summary[i].botMove,
-			  summary[i].playerHP,
-			  summary[i].botHP);
+		switch (input){
+			case 1: 
+				moveName = "Attack";
+				break;
+			case 2:
+				moveName = "Defend";
+				break;
+			case 3:
+				moveName = "Heal";
+				break;
+			case 4: 
+				moveName = "Special Attack";
+				break;
+		} // end of switch
+		// Log bot move for summary
+		strcpy(summary[summaryIndex].botMove, moveName);
+		summary[summaryIndex].playerHP = stat[player][1];
+		summary[summaryIndex].botHP = stat[bot][1];
+
+		summaryIndex++; // Increment summary index at the end of the round
+	}
+	else
+	{
+		switch (input){
+			case 1: 
+				moveName = "Attack";
+				break;
+			case 2:
+				moveName = "Defend";
+				break;
+			case 3:
+				moveName = "Heal";
+				break;
+			case 4: 
+				moveName = "Special Attack";
+				break;
+		} // end of switch
+		// Log player move for summary
+		summary[summaryIndex].round = round;
+		strcpy(summary[summaryIndex].botMove, moveName);
+
+		switch (result){
+			case 1: 
+				moveName = "Attack";
+				break;
+			case 2:
+				moveName = "Defend";
+				break;
+			case 3:
+				moveName = "Heal";
+				break;
+			case 4: 
+				moveName = "Special Attack";
+				break;
+		} // end of switch
+		// Log bot move for summary
+		strcpy(summary[summaryIndex].playerMove, moveName);
+		summary[summaryIndex].botHP = stat[bot][1];
+		summary[summaryIndex].playerHP = stat[player][1];
+
+		summaryIndex++; // Increment summary index at the end of the round
 	}
 
-	printf("+--------+-------------------+-------------------+-------------------+-------------------+\n");
-	delay(2000); // Adding a short delay before returning to the main menu or ending the game.
+		
+
+		// summary[summaryIndex].playerHP = stat[player][1];
+		// summary[summaryIndex].botHP = stat[bot][1];
+
+}
+
+
+
+
+void displaySummary(int x)
+{
+	cleanScreen();
+	switch(x){
+		case 0:
+			printf("\n----- Game Summary -----\n");
+			printf("+--------+-------------------+-------------------+-------------------+-------------------+\n");
+			printf("| Round  |     Bot Move      |    Player Move    |     Player HP     |       Bot HP      |\n");
+			printf("+--------+-------------------+-------------------+-------------------+-------------------+\n");
+
+			for (int i = 0; i < summaryIndex; i++) {
+				printf("| %-6d | %-17s | %-17s | %-17d | %-17d |\n",
+					summary[i].round + 1,
+					summary[i].botMove,
+					summary[i].playerMove,
+					summary[i].playerHP,
+					summary[i].botHP);
+			}
+
+			printf("+--------+-------------------+-------------------+-------------------+-------------------+\n");
+			delay(2000); // Adding a short delay before returning to the main menu or ending the game.
+			break;
+		case 1:
+			printf("\n----- Game Summary -----\n");
+			printf("+--------+-------------------+-------------------+-------------------+-------------------+\n");
+			printf("| Round  |     Player Move   |     Bot Move      |     Player HP     |       Bot HP      |\n");
+			printf("+--------+-------------------+-------------------+-------------------+-------------------+\n");
+
+			for (int i = 0; i < summaryIndex; i++) {
+				printf("| %-6d | %-17s | %-17s | %-17d | %-17d |\n",
+					summary[i].round + 1,
+					summary[i].playerMove,
+					summary[i].botMove,
+					summary[i].playerHP,
+					summary[i].botHP);
+			}
+
+			printf("+--------+-------------------+-------------------+-------------------+-------------------+\n");
+			delay(2000); // Adding a short delay before returning to the main menu or ending the game.
+			break;
+	}
 }
